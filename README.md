@@ -1,2 +1,6 @@
 # tensor-fsmn
-Feedforward Sequential Memory Networks (FSMN) implemented by tensorflow
+[Feedforward Sequential Memory Networks](https://arxiv.org/abs/1512.08301) (FSMN) implemented by tensorflow
+
+
+## License
+MIT License

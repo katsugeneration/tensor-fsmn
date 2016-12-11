@@ -17,9 +17,9 @@ class PTBModel:
         self._optimizer = tf.train.AdamOptimizer()
 
         # config
-        self._batch_size = 200
+        self._batch_size = 20
         self._num_steps = 50
-        self._hidden_size = 200
+        self._hidden_size = 400
         self._vocab_size = 10000
         self._keep_prob = 1.0
         self._max_grad_norm = 5  # parameters L2Norm sum limits
@@ -38,7 +38,7 @@ class PTBModel:
     def _build_graph(self, is_training):
         # Load predefined layer "embedding"
         with tf.device("/cpu:0"):
-            embedding = tf.get_variable("embedding", [self._vocab_size, 200])
+            embedding = tf.get_variable("embedding", [self._vocab_size, self._hidden_size])
             inputs = tf.nn.embedding_lookup(embedding, self._input_data)
 
         # Add dropout after embedding layer
@@ -48,27 +48,27 @@ class PTBModel:
         # Claculate FSMN Layer
         #  FSMN
         with tf.variable_scope('fsmn1'):
-            fsmn = FSMN(self._memory_size, 200, 400)
+            fsmn = FSMN(self._memory_size, self._hidden_size, self._hidden_size)
             outputs = fsmn(inputs)
             # Relu
             outputs = tf.nn.relu(outputs)
             # Dropout
             if is_training:
                 outputs = tf.nn.dropout(outputs, self._keep_prob)
-        # with tf.variable_scope('fsmn2'):
-        #     fsmn = FSMN(self._memory_size, self._hidden_size, self._hidden_size)
-        #     outputs = fsmn(outputs)
-        #     # Relu
-        #     outputs = tf.nn.relu(outputs)
-        #     # Dropout
-        #     if is_training:
-        #         outputs = tf.nn.dropout(outputs, self._keep_prob)
-        outputs = tf.reshape(outputs, [-1, 400])
+        with tf.variable_scope('fsmn2'):
+            fsmn = FSMN(self._memory_size, self._hidden_size, self._hidden_size)
+            outputs = fsmn(outputs)
+            # Relu
+            outputs = tf.nn.relu(outputs)
+            # Dropout
+            if is_training:
+                outputs = tf.nn.dropout(outputs, self._keep_prob)
+        outputs = tf.reshape(outputs, [-1, self._hidden_size])
 
         # Final output layer for getting word label
         # input shape is (batch_size x num_steps, hidden_size)
         # data style [sequence1-1, sequence1-2, sequence1-3, ... , sequenceN-M]
-        softmax_w = tf.get_variable("softmax_w", [400, self._vocab_size])
+        softmax_w = tf.get_variable("softmax_w", [self._hidden_size, self._vocab_size])
         softmax_b = tf.get_variable("softmax_b", [self._vocab_size])
         self._logits = tf.matmul(outputs, softmax_w) + softmax_b
 

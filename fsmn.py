@@ -24,12 +24,11 @@ class FSMN(object):
             left_num = tf.maximum(0, step + 1 - self._memory_size)
             right_num = num_steps - step - 1
             mem = self._memory_weights[tf.minimum(step, self._memory_size)::-1]
-            d_batch = tf.diag(tf.pad(mem, [[left_num, right_num]]))
-            memory_matrix.append([tf.concat(0, [[d_batch]] * batch_size)])
+            d_batch = tf.pad(mem, [[left_num, right_num]])
+            memory_matrix.append([d_batch])
         memory_matrix = tf.concat(0, memory_matrix)
 
-        h_hatt = tf.reduce_sum(tf.batch_matmul(memory_matrix, tf.concat(0, [[input_data]] * num_steps)), 2)
-        h_hatt = tf.transpose(h_hatt, perm=[1, 0, 2])
-        h = tf.batch_matmul(input_data, tf.concat(0, [[self._W1]] * batch_size))
-        h += tf.batch_matmul(h_hatt, tf.concat(0, [[self._W2]] * batch_size)) + self._bias
+        h_hatt = tf.batch_matmul([memory_matrix] * batch_size, input_data)
+        h = tf.batch_matmul(input_data, [self._W1] * batch_size)
+        h += tf.batch_matmul(h_hatt, [self._W2] * batch_size) + self._bias
         return h
